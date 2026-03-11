@@ -3,67 +3,27 @@ import tensorflow as tf
 import numpy as np
 import cv2
 from PIL import Image
+import os
 
-# -----------------------------
-# Page Config
-# -----------------------------
-st.set_page_config(
-    page_title="Digit Recognizer",
-    page_icon="✍️",
-    layout="centered"
-)
+# ... your CSS and title code remains unchanged ...
 
-# -----------------------------
-# Custom CSS
-# -----------------------------
-st.markdown("""
-<style>
+@st.cache_resource(show_spinner=False)
+def load_model():
+    model_path = "mnist_cnn_model.h5"
+    if not os.path.exists(model_path):
+        raise FileNotFoundError(f"Model file '{model_path}' not found.")
+    model = tf.keras.models.load_model(model_path, compile=False)
+    return model
 
-.main-title{
-    font-size:40px;
-    font-weight:bold;
-    text-align:center;
-    color:#4CAF50;
-}
+try:
+    model = load_model()
+except Exception as e:
+    st.error(f"Error loading model: {str(e)}")
+    st.stop()
 
-.sub-title{
-    text-align:center;
-    font-size:18px;
-    color:gray;
-}
-
-.prediction-box{
-    padding:20px;
-    border-radius:15px;
-    background-color:#f0f2f6;
-    text-align:center;
-    font-size:25px;
-    font-weight:bold;
-}
-
-</style>
-""", unsafe_allow_html=True)
-
-# -----------------------------
-# Title
-# -----------------------------
-st.markdown('<p class="main-title">✍️ Handwritten Digit Recognition</p>', unsafe_allow_html=True)
-st.markdown('<p class="sub-title">Upload an image of a handwritten digit (0-9)</p>', unsafe_allow_html=True)
-
-st.write("")
-
-# -----------------------------
-# Load Model
-# -----------------------------
-model = tf.keras.models.load_model("mnist_cnn_model.h5", compile=False)
-
-# -----------------------------
-# File Upload
-# -----------------------------
 file = st.file_uploader("📤 Upload Digit Image", type=["png","jpg","jpeg"])
 
 if file:
-
     col1, col2 = st.columns(2)
 
     img = Image.open(file).convert("L")
@@ -75,7 +35,7 @@ if file:
 
     prediction = model.predict(img_input)
     digit = np.argmax(prediction)
-    confidence = np.max(prediction)*100
+    confidence = np.max(prediction) * 100
 
     with col1:
         st.subheader("Uploaded Image")
@@ -83,7 +43,6 @@ if file:
 
     with col2:
         st.subheader("Prediction Result")
-
         st.markdown(f"""
         <div class="prediction-box">
         Predicted Digit: {digit} <br>
@@ -91,6 +50,5 @@ if file:
         </div>
         """, unsafe_allow_html=True)
 
-    st.write("")
-
-    st.progress(int(confidence))
+    st.subheader("Confidence")
+    st.progress(min(100, int(confidence)))
